@@ -1,14 +1,22 @@
 import React from "react";
-import { View, Text, StatusBar, StyleSheet, TouchableOpacity, Modal } from "react-native";
+import { View, Text, StatusBar, StyleSheet, TouchableOpacity, Modal, Image } from "react-native";
 import { RNCamera } from "react-native-camera";
 import { useState } from "react";
 export default function App(){
 
   const [type, setType] = useState(RNCamera.Constants.Type.Back)
   const [open, setOpen] = useState(false)
+  const [capturedPhoto, setCapturedPhoto] = useState(null)
 
-  function takePicture(){
-    setOpen(true)
+  async function takePicture(camera){
+    const options = {quality: 0.5, base64: true};
+    const data = await camera.takePictureAsync(options);
+    setCapturedPhoto(data.uri);
+    setOpen(true);
+    console.log('Foto tirada: ' + data.uri);
+  }
+  function toggleCam(){
+    setType(type === RNCamera.Constants.Type.back ? RNCamera.Constants.Type.front : RNCamera.Constants.Type.back)
   }
 
   return(
@@ -31,7 +39,7 @@ export default function App(){
             <View style={{marginBottom: 35, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between'}}>
               
               <TouchableOpacity
-                onPress={()=> takePicture() }
+                onPress={()=> takePicture(camera) }
                 style={styles.capture}
               >
 
@@ -53,27 +61,41 @@ export default function App(){
           );
         }}
       </RNCamera>
-      <Modal animationType="slide" transparent={false} visible={open}>
-        <View style={{flex:1, justifyContent: 'center', alignItems: 'center', margin: 20}} >
-          <TouchableOpacity style={{margin: 10}} onPress={() => setOpen(false)}>
-            <Text style={{ fontSize: 24}}>Fechar</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
+      <View style={styles.camPosition}>
+        <TouchableOpacity onPress={toggleCam}>
+          <Text>Trocar Camera</Text>
+        </TouchableOpacity>
+      </View>
+      {capturedPhoto &&
+        <Modal animationType="slide" transparent={false} visible={open}>
+          <View style={{flex:1, justifyContent: 'center', alignItems: 'center', margin: 20}} >
+            <TouchableOpacity style={{margin: 10}} onPress={() => setOpen(false)}>
+              <Text style={{ fontSize: 24}}>Fechar</Text>
+            </TouchableOpacity>
+            <Image
+              resizeMode="contain" source={{uri: capturedPhoto}}
+              style={{width: 350, height: 450, borderRadius: 15}}
+            />
+          </View>
+        </Modal>
+      }
     </View>
   )
 }
 
 const styles = StyleSheet.create({
+
   container:{
     flex:1,
     justifyContent: 'center'
   },
+
   preview:{
     flex:1,
     justifyContent: 'flex-end',
     alignItems: 'center'
   },
+
   capture:{
     flex: 0,
     backgroundColor: '#FFF',
@@ -82,5 +104,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignSelf: 'center',
     margin: 20,
+  },
+
+  camPosition:{
+    backgroundColor: '#FFF',
+    borderRadius:5,
+    padding: 10,
+    height: 40,
+    position: 'absolute',
+    right: 25,
+    top: 60,
   }
+
 });
